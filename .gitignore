@@ -1,0 +1,18 @@
+# Carpeta contexto
+context/*
+
+# Variables de entorno
+.env
+
+# Entorno virtual
+.venv/
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+
+# Archivos de VS Code (opcional)
+.vscode/
+
+# Archivos temporales
+*.log

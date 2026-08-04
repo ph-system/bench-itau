@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ETL Loader Itaú</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">itaú</div>
+        <div>
+          <strong>ETL Loader</strong>
+          <small>Procesamiento de archivos</small>
+        </div>
+      </div>
+
+      <nav class="nav flex-column gap-2 mt-4">
+        <a class="nav-link active" href="#"><i class="bi bi-grid"></i> Dashboard</a>
+        <a class="nav-link" href="#cargas"><i class="bi bi-cloud-arrow-up"></i> Cargas</a>
+        <a class="nav-link" href="#historial"><i class="bi bi-clock-history"></i> Historial</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div>
+          <h1>Carga de archivos ETL</h1>
+          <p>Selecciona la fecha, adjunta el Excel y ejecuta el proceso.</p>
+        </div>
+        <div class="header-badge">
+          <i class="bi bi-database-check"></i>
+          <span>Base de datos conectada</span>
+        </div>
+      </header>
+
+      <section id="cargas" class="row g-4">
+        <div class="col-12 col-xl-6">
+          <div class="etl-card castigo-card">
+            <div class="card-heading">
+              <div class="module-icon"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+              <div>
+                <h2>Itaú Castigo</h2>
+                <p>Carga y procesa el archivo correspondiente a Castigo.</p>
+              </div>
+            </div>
+
+            <form class="etl-form" data-module="castigo">
+              <label class="form-label">Fecha de la carga</label>
+              <input type="date" class="form-control load-date" required>
+
+              <label class="form-label mt-3">Archivo Excel</label>
+              <div class="drop-zone" tabindex="0">
+                <input type="file" class="file-input" accept=".xlsx" hidden>
+                <i class="bi bi-cloud-arrow-up"></i>
+                <strong>Arrastra y suelta tu archivo aquí</strong>
+                <span>o haz clic para seleccionarlo</span>
+                <small>Formato permitido: .xlsx</small>
+              </div>
+
+              <div class="selected-file d-none">
+                <i class="bi bi-file-earmark-excel"></i>
+                <div>
+                  <strong class="file-name"></strong>
+                  <small class="file-size"></small>
+                </div>
+                <button type="button" class="btn btn-sm btn-light remove-file">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+
+              <button type="submit" class="btn process-btn castigo-btn w-100 mt-4" disabled>
+                <i class="bi bi-play-circle"></i> Cargar y procesar
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+          <div class="etl-card vencida-card">
+            <div class="card-heading">
+              <div class="module-icon"><i class="bi bi-file-earmark-spreadsheet"></i></div>
+              <div>
+                <h2>Itaú Vencida</h2>
+                <p>Carga y procesa el archivo correspondiente a Vencida.</p>
+              </div>
+            </div>
+
+            <form class="etl-form" data-module="vencida">
+              <label class="form-label">Fecha de la carga</label>
+              <input type="date" class="form-control load-date" required>
+
+              <label class="form-label mt-3">Archivo Excel</label>
+              <div class="drop-zone" tabindex="0">
+                <input type="file" class="file-input" accept=".xlsx" hidden>
+                <i class="bi bi-cloud-arrow-up"></i>
+                <strong>Arrastra y suelta tu archivo aquí</strong>
+                <span>o haz clic para seleccionarlo</span>
+                <small>Formato permitido: .xlsx</small>
+              </div>
+
+              <div class="selected-file d-none">
+                <i class="bi bi-file-earmark-excel"></i>
+                <div>
+                  <strong class="file-name"></strong>
+                  <small class="file-size"></small>
+                </div>
+                <button type="button" class="btn btn-sm btn-light remove-file">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+
+              <button type="submit" class="btn process-btn vencida-btn w-100 mt-4" disabled>
+                <i class="bi bi-play-circle"></i> Cargar y procesar
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section id="historial" class="history-card mt-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <h3>Historial de cargas</h3>
+            <p class="mb-0">Últimos procesos ejecutados.</p>
+          </div>
+          <button class="btn btn-outline-primary btn-sm" id="refreshHistory">
+            <i class="bi bi-arrow-clockwise"></i> Actualizar
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Módulo</th>
+                <th>Archivo</th>
+                <th>Fecha carga</th>
+                <th>Estado</th>
+                <th>Registros</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr>
+                <td colspan="5" class="text-center text-secondary py-4">Sin cargas registradas.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content loading-modal">
+        <div class="modal-body text-center p-5">
+          <div class="spinner-border text-primary mb-3" role="status"></div>
+          <h4 id="loadingTitle">Procesando archivo...</h4>
+          <p id="loadingMessage" class="text-secondary mb-3">
+            Estamos ejecutando el ETL. No cierres esta ventana.
+          </p>
+          <div class="progress" role="progressbar">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+          </div>
+          <button type="button" class="btn btn-outline-secondary mt-4" id="cancelUpload">
+            Cancelar carga
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="appToast" class="toast border-0" role="alert">
+      <div class="d-flex">
+        <div class="toast-body" id="toastMessage"></div>
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>
