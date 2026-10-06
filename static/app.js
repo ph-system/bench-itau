@@ -133,6 +133,15 @@ document.querySelectorAll(".etl-form").forEach((form) => {
       fileName.textContent = file.name;
       fileSize.textContent = formatBytes(file.size);
       selectedFile.classList.remove("d-none");
+
+      // Vencida: la fecha de carga viene en el nombre (Contenciones ddmmyy).
+      const nameDate = moduleName === "vencida"
+        ? file.name.match(/contenciones\D*(\d{2})(\d{2})(\d{2})(?!\d)/i)
+        : null;
+      if (nameDate) {
+        form.querySelector(".load-date").value = `20${nameDate[3]}-${nameDate[2]}-${nameDate[1]}`;
+      }
+
       validateFileStructure(file, token);
     } catch (error) {
       resetSelectedFile();

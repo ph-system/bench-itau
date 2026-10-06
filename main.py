@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from etl.castigo import procesar_castigo, validar_estructura_castigo
-from etl.vencida import procesar_vencida, validar_estructura_vencida
+from etl.vencida import fecha_desde_nombre, procesar_vencida, validar_estructura_vencida
 
 app = FastAPI(title="ETL Loader Itaú")
 
@@ -147,6 +147,9 @@ def procesar_archivo(
     nombre_seguro = f"{uuid4().hex}_{Path(archivo.filename or 'archivo.xlsx').name}"
     nombre_original = Path(archivo.filename or "archivo.xlsx").name
     ruta_destino = UPLOAD_DIR / nombre_seguro
+    if modulo == "vencida":
+        # En Vencida manda la fecha del nombre del archivo (Contenciones ddmmyy).
+        fecha_carga = fecha_desde_nombre(nombre_original) or fecha_carga
 
     try:
         check_cancelled()
