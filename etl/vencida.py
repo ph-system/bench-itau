@@ -51,6 +51,28 @@ COLUMN_SPECS = [
 COLUMN_KINDS = dict(COLUMN_SPECS)
 EXPECTED_COLUMNS = [name for name, _ in COLUMN_SPECS]
 
+# El archivo de cierre trae menos columnas que el diario: si faltan se cargan en NULL.
+OPTIONAL_COLUMNS = {
+    "DESC_PRODUCTO", "EJEC_NORM", "TRAMO_SALDO", "FLAG_CAMPANA_2",
+    "TIPO_CAMPANA", "ESTADO_CURSE_CAMPANA",
+}
+COLUMN_ALIASES = {"DV": "DV1"}
+
+# Solo se carga a la base la cartera de este gestor.
+GESTOR_CARGA = "PHOENIX"
+
+
+def fecha_desde_nombre(nombre_archivo: str) -> date | None:
+    """Fecha de carga desde el nombre 'Contenciones ddmmyy...'; None si no calza."""
+    match = re.search(r"contenciones\D*(\d{2})(\d{2})(\d{2})(?!\d)", nombre_archivo, re.IGNORECASE)
+    if match is None:
+        return None
+    dia, mes, anio = map(int, match.groups())
+    try:
+        return date(2000 + anio, mes, dia)
+    except ValueError:
+        return None
+
 
 def pick_driver() -> str:
     available = list(pyodbc.drivers())
@@ -229,18 +251,29 @@ def read_excel(path: Path) -> pd.DataFrame:
             f"Detalle: {error}"
         ) from error
     df.columns = normalize_excel_columns(df.columns)
+    df = df.rename(
+        columns={
+            alias: name
+            for alias, name in COLUMN_ALIASES.items()
+            if alias in df.columns and name not in df.columns
+        }
+    )
     df = df.where(pd.notnull(df), None)
 
     missing = [col for col in EXPECTED_COLUMNS if col not in df.columns]
-    if missing:
+    required_missing = [col for col in missing if col not in OPTIONAL_COLUMNS]
+    if required_missing:
         raise ValueError(
             "El archivo no tiene la estructura esperada para Itau Vencida. "
-            "Faltan columnas: " + ", ".join(missing)
+            "Faltan columnas: " + ", ".join(required_missing)
         )
+    for col in missing:
+        df[col] = None
 
     df = df[EXPECTED_COLUMNS].copy()
     df["NOMBRE"] = df["NOMBRE"].ffill()
-    return df
+    es_gestor = df["GESTOR"].astype("string").str.strip().str.upper() == GESTOR_CARGA
+    return df[es_gestor.fillna(False)].reset_index(drop=True)
 
 
 def ensure_table() -> None:
@@ -338,6 +371,7 @@ def procesar_vencida(
     source_file: str,
 ) -> int:
     check_cancelled()
+    fecha_carga = fecha_desde_nombre(source_file) or fecha_carga
     df = read_excel(ruta_archivo)
     check_cancelled()
     ensure_table()
