@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 from shutil import copyfileobj
 from threading import Event, Lock
@@ -11,6 +11,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from etl import castigo, vencida
 from etl.castigo import procesar_castigo, validar_estructura_castigo
 from etl.vencida import fecha_desde_nombre, procesar_vencida, validar_estructura_vencida
 
@@ -22,9 +23,9 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 
-# Ejemplo simple en memoria.
-# En producción, reemplázalo por una tabla de auditoría en SQL Server.
-historial: list[dict] = []
+MODULOS_ETL = {"castigo": castigo, "vencida": vencida}
+LIMITE_HISTORIAL = 20
+
 active_jobs: dict[str, Event] = {}
 active_jobs_lock = Lock()
 
@@ -71,25 +72,36 @@ def validar_estructura(
     return validar_estructura_vencida(ruta_archivo)
 
 
-def registrar_historial(
-    modulo: Literal["castigo", "vencida"],
-    archivo: str | None,
-    fecha_carga: date,
-    estado: str,
-    registros: int | None,
-) -> None:
-    historial.insert(
-        0,
+def consultar_historial(modulo: Literal["castigo", "vencida"]) -> list[dict]:
+    """Cargas presentes en la tabla del modulo: una fila por fecha de carga y archivo."""
+    etl = MODULOS_ETL[modulo]
+
+    with etl.connect() as cn:
+        cur = cn.cursor()
+        if cur.execute("SELECT OBJECT_ID(?, 'U')", etl.TABLE).fetchone()[0] is None:
+            return []
+
+        cur.execute(
+            f"""
+            SELECT TOP (?) fecha_carga, source_file, COUNT(*) AS registros, MAX(ts_carga) AS ts_carga
+            FROM {etl.TABLE}
+            GROUP BY fecha_carga, source_file
+            ORDER BY fecha_carga DESC, MAX(ts_carga) DESC
+            """,
+            LIMITE_HISTORIAL,
+        )
+        filas = cur.fetchall()
+
+    return [
         {
-            "modulo": modulo,
-            "modulo_nombre": "Itaú Castigo" if modulo == "castigo" else "Itaú Vencida",
-            "archivo": archivo,
-            "fecha_carga": fecha_carga.isoformat(),
-            "fecha_proceso": datetime.now().isoformat(timespec="seconds"),
-            "estado": estado,
-            "registros": registros,
-        },
-    )
+            "archivo": fila.source_file,
+            "fecha_carga": fila.fecha_carga.isoformat(),
+            "fecha_proceso": fila.ts_carga.isoformat(timespec="seconds") if fila.ts_carga else None,
+            "estado": "EXITOSA",
+            "registros": fila.registros,
+        }
+        for fila in filas
+    ]
 
 
 @app.post("/api/validar/{modulo}")
@@ -166,8 +178,6 @@ def procesar_archivo(
             source_file=nombre_original,
         )
 
-        registrar_historial(modulo, archivo.filename, fecha_carga, "EXITOSA", registros)
-
         return {
             "ok": True,
             "message": "Archivo procesado correctamente.",
@@ -177,14 +187,10 @@ def procesar_archivo(
     except HTTPException:
         raise
     except CargaCancelada as error:
-        registrar_historial(modulo, archivo.filename, fecha_carga, "CANCELADA", None)
         raise HTTPException(status_code=409, detail=str(error)) from error
     except ValueError as error:
-        registrar_historial(modulo, archivo.filename, fecha_carga, "ERROR", None)
         raise HTTPException(status_code=400, detail=str(error)) from error
     except Exception as error:
-        registrar_historial(modulo, archivo.filename, fecha_carga, "ERROR", None)
-
         raise HTTPException(
             status_code=500,
             detail=f"Error ejecutando el ETL: {error}",
@@ -211,7 +217,11 @@ def cancelar_carga(job_id: str) -> dict:
 
 
 @app.get("/api/cargas")
-def listar_cargas(modulo: Literal["castigo", "vencida"] | None = None) -> list[dict]:
-    if modulo is None:
-        return historial[:20]
-    return [carga for carga in historial if carga["modulo"] == modulo][:20]
+def listar_cargas(modulo: Literal["castigo", "vencida"]) -> list[dict]:
+    try:
+        return consultar_historial(modulo)
+    except Exception as error:
+        raise HTTPException(
+            status_code=500,
+            detail=f"No fue posible leer el historial desde la base de datos: {error}",
+        ) from error
