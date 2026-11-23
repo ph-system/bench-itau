@@ -350,6 +350,10 @@ def insert_append(
         cur.fast_executemany = True
 
         try:
+            # Si la fecha ya estaba cargada, se reemplaza: se borra lo anterior en la
+            # misma transaccion, asi un error o cancelacion deja los datos previos intactos.
+            cur.execute(f"DELETE FROM {TABLE} WHERE fecha_carga = ?", fecha_carga)
+            check_cancelled()
             for i in range(0, len(rows), BATCH_SIZE):
                 check_cancelled()
                 batch = rows[i : i + BATCH_SIZE]

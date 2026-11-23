@@ -262,46 +262,61 @@ document.querySelectorAll(".etl-form").forEach((form) => {
   });
 });
 
-async function loadHistory() {
-  const body = document.getElementById("historyBody");
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  })[char]);
+}
+
+function formatProcessedAt(value) {
+  if (!value) return "-";
+  const [day, time = ""] = value.split("T");
+  return `${day} ${time.slice(0, 5)}`;
+}
+
+function historyMessageRow(message, cssClass) {
+  return `
+    <tr>
+      <td colspan="5" class="text-center ${cssClass} py-4">${message}</td>
+    </tr>`;
+}
+
+async function loadModuleHistory(body) {
+  const moduleName = body.dataset.module;
 
   try {
-    const response = await fetch("/api/cargas");
+    const response = await fetch(`/api/cargas?modulo=${encodeURIComponent(moduleName)}`);
     if (!response.ok) throw new Error();
 
     const rows = await response.json();
 
     if (!rows.length) {
-      body.innerHTML = `
-        <tr>
-          <td colspan="5" class="text-center text-secondary py-4">
-            Sin cargas registradas.
-          </td>
-        </tr>`;
+      body.innerHTML = historyMessageRow("Sin cargas registradas.", "text-secondary");
       return;
     }
 
     body.innerHTML = rows.map((row) => `
       <tr>
-        <td><strong>${row.modulo}</strong></td>
-        <td>${row.archivo}</td>
-        <td>${row.fecha_carga}</td>
+        <td><strong>${escapeHtml(row.archivo)}</strong></td>
+        <td>${escapeHtml(row.fecha_carga)}</td>
+        <td>${escapeHtml(formatProcessedAt(row.fecha_proceso))}</td>
         <td>
           <span class="${row.estado === "EXITOSA" ? "badge-soft-success" : row.estado === "CANCELADA" ? "badge-soft-warning" : "badge-soft-danger"}">
-            ${row.estado}
+            ${escapeHtml(row.estado)}
           </span>
         </td>
-        <td>${row.registros ?? "-"}</td>
+        <td>${escapeHtml(row.registros ?? "-")}</td>
       </tr>
     `).join("");
   } catch {
-    body.innerHTML = `
-      <tr>
-        <td colspan="5" class="text-center text-danger py-4">
-          No fue posible cargar el historial.
-        </td>
-      </tr>`;
+    body.innerHTML = historyMessageRow("No fue posible cargar el historial.", "text-danger");
   }
+}
+
+async function loadHistory() {
+  await Promise.all(
+    [...document.querySelectorAll(".history-body")].map(loadModuleHistory)
+  );
 }
 
 document.getElementById("refreshHistory").addEventListener("click", loadHistory);

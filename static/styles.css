@@ -18,54 +18,6 @@ body {
 
 .app-shell {
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: 250px 1fr;
-}
-
-.sidebar {
-  background: linear-gradient(180deg, var(--navy), #0a1a2f);
-  color: white;
-  padding: 24px 18px;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-logo {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
-  background: linear-gradient(135deg, #ff7a00, #ff4d00);
-  box-shadow: 0 12px 25px rgba(255, 107, 0, .25);
-}
-
-.brand small {
-  display: block;
-  opacity: .65;
-}
-
-.sidebar .nav-link {
-  color: rgba(255, 255, 255, .78);
-  border-radius: 12px;
-  padding: 12px 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.sidebar .nav-link:hover,
-.sidebar .nav-link.active {
-  color: white;
-  background: rgba(68, 130, 255, .28);
 }
 
 .main-content {
@@ -235,8 +187,25 @@ body {
   margin-bottom: 4px;
 }
 
-.history-card p {
+.history-card p,
+.history-title p {
   color: #7b879b;
+}
+
+.history-title h3 {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.history-heading {
+  margin-bottom: 16px;
+}
+
+.history-heading .module-icon {
+  width: 40px;
+  height: 40px;
+  font-size: 1.1rem;
 }
 
 .badge-soft-success {
@@ -267,13 +236,6 @@ body {
 }
 
 @media (max-width: 991px) {
-  .app-shell { grid-template-columns: 1fr; }
-  .sidebar {
-    height: auto;
-    position: static;
-    padding: 16px;
-  }
-  .sidebar nav { flex-direction: row !important; overflow-x: auto; }
   .main-content { padding: 20px; }
   .page-header { align-items: flex-start; gap: 18px; flex-direction: column; }
 }

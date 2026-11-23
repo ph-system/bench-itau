@@ -11,22 +11,6 @@
 </head>
 <body>
   <div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-logo">itaú</div>
-        <div>
-          <strong>ETL Loader</strong>
-          <small>Procesamiento de archivos</small>
-        </div>
-      </div>
-
-      <nav class="nav flex-column gap-2 mt-4">
-        <a class="nav-link active" href="#"><i class="bi bi-grid"></i> Dashboard</a>
-        <a class="nav-link" href="#cargas"><i class="bi bi-cloud-arrow-up"></i> Cargas</a>
-        <a class="nav-link" href="#historial"><i class="bi bi-clock-history"></i> Historial</a>
-      </nav>
-    </aside>
-
     <main class="main-content">
       <header class="page-header">
         <div>
@@ -123,34 +107,71 @@
         </div>
       </section>
 
-      <section id="historial" class="history-card mt-4">
+      <section id="historial" class="mt-4">
         <div class="d-flex align-items-center justify-content-between mb-3">
-          <div>
+          <div class="history-title">
             <h3>Historial de cargas</h3>
-            <p class="mb-0">Últimos procesos ejecutados.</p>
+            <p class="mb-0">Últimos procesos ejecutados por módulo.</p>
           </div>
           <button class="btn btn-outline-primary btn-sm" id="refreshHistory">
             <i class="bi bi-arrow-clockwise"></i> Actualizar
           </button>
         </div>
 
-        <div class="table-responsive">
-          <table class="table align-middle">
-            <thead>
-              <tr>
-                <th>Módulo</th>
-                <th>Archivo</th>
-                <th>Fecha carga</th>
-                <th>Estado</th>
-                <th>Registros</th>
-              </tr>
-            </thead>
-            <tbody id="historyBody">
-              <tr>
-                <td colspan="5" class="text-center text-secondary py-4">Sin cargas registradas.</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="row g-4">
+          <div class="col-12 col-xl-6">
+            <div class="history-card castigo-card h-100">
+              <div class="card-heading history-heading">
+                <div class="module-icon"><i class="bi bi-clock-history"></i></div>
+                <h3 class="mb-0">Itaú Castigo</h3>
+              </div>
+              <div class="table-responsive">
+                <table class="table align-middle">
+                  <thead>
+                    <tr>
+                      <th>Archivo</th>
+                      <th>Fecha carga</th>
+                      <th>Procesado</th>
+                      <th>Estado</th>
+                      <th>Registros</th>
+                    </tr>
+                  </thead>
+                  <tbody class="history-body" data-module="castigo">
+                    <tr>
+                      <td colspan="5" class="text-center text-secondary py-4">Sin cargas registradas.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-xl-6">
+            <div class="history-card vencida-card h-100">
+              <div class="card-heading history-heading">
+                <div class="module-icon"><i class="bi bi-clock-history"></i></div>
+                <h3 class="mb-0">Itaú Vencida</h3>
+              </div>
+              <div class="table-responsive">
+                <table class="table align-middle">
+                  <thead>
+                    <tr>
+                      <th>Archivo</th>
+                      <th>Fecha carga</th>
+                      <th>Procesado</th>
+                      <th>Estado</th>
+                      <th>Registros</th>
+                    </tr>
+                  </thead>
+                  <tbody class="history-body" data-module="vencida">
+                    <tr>
+                      <td colspan="5" class="text-center text-secondary py-4">Sin cargas registradas.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     </main>
