@@ -81,7 +81,8 @@ def registrar_historial(
     historial.insert(
         0,
         {
-            "modulo": "Itaú Castigo" if modulo == "castigo" else "Itaú Vencida",
+            "modulo": modulo,
+            "modulo_nombre": "Itaú Castigo" if modulo == "castigo" else "Itaú Vencida",
             "archivo": archivo,
             "fecha_carga": fecha_carga.isoformat(),
             "fecha_proceso": datetime.now().isoformat(timespec="seconds"),
@@ -210,5 +211,7 @@ def cancelar_carga(job_id: str) -> dict:
 
 
 @app.get("/api/cargas")
-def listar_cargas() -> list[dict]:
-    return historial[:20]
+def listar_cargas(modulo: Literal["castigo", "vencida"] | None = None) -> list[dict]:
+    if modulo is None:
+        return historial[:20]
+    return [carga for carga in historial if carga["modulo"] == modulo][:20]
